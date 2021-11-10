@@ -6,13 +6,13 @@
 
 
     <parent>
-        <groupId>org.fushoujiang</groupId>
+        <groupId>org.fsj</groupId>
         <artifactId>DistributedLock</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
 
-    <groupId>org.fushoujiang</groupId>
+    <groupId>org.fsj</groupId>
     <artifactId>DistributedLock-core</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
