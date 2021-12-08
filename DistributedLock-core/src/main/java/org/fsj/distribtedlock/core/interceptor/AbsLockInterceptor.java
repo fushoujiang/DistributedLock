@@ -1,65 +1,71 @@
-package org.fsj.distribtedlock.core;
+package org.fsj.distribtedlock.core.interceptor;
 
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.fsj.distribtedlock.core.factory.LockFactory;
+import org.fsj.distribtedlock.core.LockFailException;
+import org.fsj.distribtedlock.core.entity.LockConfigEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
-import org.springframework.core.Ordered;
-import org.springframework.util.ObjectUtils;
 
-import javax.annotation.Resource;
 import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
-/**
- * 处理分布式锁的加锁&释放
- *
- *
- * @see org.fsj.distribtedlock.core.LockAnnotation
- * @author fushoujiang -- 2017/12/15
- */
-@Aspect
-public class RedisLockInterceptor implements Ordered{
+public abstract class AbsLockInterceptor {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbsLockInterceptor.class);
 
-    @Resource
-    LockFactory lockFactory;
-
-    @Around("@annotation(distributedLock)")
-    public Object lockAround(ProceedingJoinPoint joinPoint, LockAnnotation distributedLock) {
-        final String lockKey = getLockKey(joinPoint.getArgs(), distributedLock);
-        final  Lock lock = lockFactory.getLock(lockKey);
+    public Object lockAround(ProceedingJoinPoint joinPoint, Annotation annotation) throws Throwable{
+        final LockConfigEntity lockConfigEntity = lockAnnotation2LockConfig(annotation);
+        String lockKey = getLockKey(joinPoint, lockConfigEntity);
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-        if (!lock(lock, distributedLock.timeout())) {
-            String failMethod = distributedLock.lockFailMethod();
-            if (ObjectUtils.isEmpty(failMethod)){
-                throw  new LockFailException(joinPoint.getTarget().getClass().getName()+"--"+methodSignature.getName()+"...key="+lockKey);
+        Lock lock = getLock(lockKey);
+        if (!lock( lock,lockKey,lockConfigEntity.getTimeout())) {
+            LOGGER.info("{}-{}, get lock fail:{}", joinPoint.getTarget().getClass().getName(), methodSignature.getName(), lockKey);
+            String failMethod = lockConfigEntity.getLockFailMethod();
+            if (StringUtils.isBlank(failMethod)) {
+                throw new LockFailException(joinPoint.getTarget().getClass().getName() + "--" + methodSignature.getName() + "...key=" + lockKey);
             }
-            return invokeFallbackMethod(joinPoint,failMethod);
+            return invokeFallbackMethod(joinPoint, failMethod);
         }
+        LOGGER.info("{}-{}, get lock success:{}", joinPoint.getTarget().getClass().getName(), methodSignature.getName(), lockKey);
         try {
             return joinPoint.proceed();
-        } catch (Throwable throwable) {
-            throw new RuntimeException(throwable);
-        } finally {
-            lock.unlock();
+        }finally {
+            unlock(lock);
+            LOGGER.info("{}-{}, release lock:{}", joinPoint.getTarget().getClass().getName(), methodSignature.getName(), lockKey);
         }
     }
 
     /**
+     * 将注解转换为LockConfigEntity
+     * @param annotation
+     * @return
+     */
+    public abstract LockConfigEntity lockAnnotation2LockConfig(Annotation annotation);
+    /**
+     * 获取锁实例
+     * @param lockKey
+     * @return
+     */
+    public abstract Lock getLock(String lockKey);
+
+
+    /**
      * 获取分布式锁
      *
-     * @param lock lock
-     * @param timeout 超时
      * @return 是否获取成功
      */
-    private boolean lock(Lock lock, int timeout) {
+    public boolean lock(Lock lock,String lockKey ,int timeout) {
+        Preconditions.checkArgument(Objects.nonNull(lock), "加锁时获取的lock为null");
         try {
             return lock.tryLock(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -68,18 +74,26 @@ public class RedisLockInterceptor implements Ordered{
         }
     }
 
+    public void unlock(Lock lock) {
+        Preconditions.checkArgument(Objects.nonNull(lock), "解锁时获取的lock为null");
+        lock.unlock();
+    }
+
+
+
     /**
      * 解析加锁内容
      *
-     * @param args 要加锁方法入参
-     * @param distributedLock 加锁配置（注解）
+     * @param joinPoint            要加锁方法入参
+     * @param lockConfigEntity 加锁配置（注解）
      * @return 要加锁的key
      */
-    private String getLockKey(Object[] args, LockAnnotation distributedLock) {
-        StringBuilder lockKey = new StringBuilder(distributedLock.lockPrefix());
-        String[] keys = distributedLock.keys();
+    public String getLockKey(ProceedingJoinPoint joinPoint, LockConfigEntity lockConfigEntity) {
+        final Object[] args = joinPoint.getArgs();
+        StringBuilder lockKey = new StringBuilder(lockConfigEntity.getLockPrefix());
+        String[] keys = lockConfigEntity.getKeys();
         int index = 0;
-        for (int keyIndex : distributedLock.keyIndexes()) {
+        for (int keyIndex : lockConfigEntity.getKeyIndexes()) {
             Object arg = args[keyIndex];
             String key = keys[index++];
             if (isBasicType(key)) {
@@ -90,7 +104,6 @@ public class RedisLockInterceptor implements Ordered{
         }
         return lockKey.toString();
     }
-
     /**
      * 判断是否基础数据类型
      *
@@ -98,7 +111,8 @@ public class RedisLockInterceptor implements Ordered{
      * @return true/false
      */
     private boolean isBasicType(String name) {
-        return "LONG".equalsIgnoreCase(name) || "INT".equalsIgnoreCase(name) || "STRING".equalsIgnoreCase(name);
+        return StringUtils.equalsIgnoreCase(name, "LONG") || StringUtils.equalsIgnoreCase(name, "INT")
+                || StringUtils.equalsIgnoreCase(name, "STRING");
     }
 
     /**
@@ -153,8 +167,5 @@ public class RedisLockInterceptor implements Ordered{
         }
     }
 
-    @Override
-    public int getOrder() {
-        return -1;
-    }
+
 }
