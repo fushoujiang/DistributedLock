@@ -1,11 +1,11 @@
-package org.fsj.distribtedlock.core;
+package org.fsj.lock.manager;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.fsj.distribtedlock.core.factory.LockFactory;
+import org.fsj.lock.manager.factory.LockFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.Ordered;
 import org.springframework.util.ObjectUtils;
@@ -22,7 +22,7 @@ import java.util.concurrent.locks.Lock;
  * 处理分布式锁的加锁&释放
  *
  *
- * @see org.fsj.distribtedlock.core.LockAnnotation
+ * @see LockAnnotation
  * @author fushoujiang -- 2017/12/15
  */
 @Aspect

@@ -1,12 +1,12 @@
-package org.fsj.distribtedlock.core.interceptor;
+package org.fsj.lock.manager.interceptor;
 
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.fsj.distribtedlock.core.LockFailException;
-import org.fsj.distribtedlock.core.entity.LockConfigEntity;
+import org.fsj.lock.manager.LockFailException;
+import org.fsj.lock.manager.entity.LockConfigEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;

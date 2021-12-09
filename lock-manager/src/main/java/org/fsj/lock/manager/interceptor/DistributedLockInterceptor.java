@@ -1,11 +1,11 @@
-package org.fsj.distribtedlock.core.interceptor;
+package org.fsj.lock.manager.interceptor;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.fsj.distribtedlock.core.LockAnnotation;
-import org.fsj.distribtedlock.core.factory.LockFactory;
-import org.fsj.distribtedlock.core.entity.LockConfigEntity;
+import org.fsj.lock.manager.LockAnnotation;
+import org.fsj.lock.manager.factory.LockFactory;
+import org.fsj.lock.manager.entity.LockConfigEntity;
 
 import java.lang.annotation.Annotation;
 import java.util.concurrent.locks.Lock;

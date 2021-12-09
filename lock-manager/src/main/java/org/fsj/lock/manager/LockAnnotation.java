@@ -1,4 +1,4 @@
-package org.fsj.distribtedlock.core;
+package org.fsj.lock.manager;
 
 
 import java.lang.annotation.*;

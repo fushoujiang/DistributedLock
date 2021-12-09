@@ -1,4 +1,4 @@
-package org.fsj.distribtedlock.core.factory;
+package org.fsj.lock.manager.factory;
 
 
 import org.redisson.Redisson;

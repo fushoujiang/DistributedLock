@@ -1,4 +1,4 @@
-package org.fsj.distribtedlock.core.entity;
+package org.fsj.lock.manager.entity;
 
 public class LockConfigEntity {
     /**

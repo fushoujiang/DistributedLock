@@ -1,4 +1,4 @@
-package org.fsj.distribtedlock.core.factory;
+package org.fsj.lock.manager.factory;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;

@@ -5,12 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.fsj</groupId>
-    <artifactId>DistributedLock</artifactId>
+    <artifactId>lock</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>distributedLock</name>
+    <name>lock</name>
+
     <modules>
-        <module>DistributedLock-core</module>
+        <module>lock-manager</module>
+        <module>lock-distributed</module>
     </modules>
 
 
@@ -54,12 +56,13 @@
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-aop</artifactId>
+                <version>${org.springframework.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-aspects</artifactId>
-                <version>${spring.version}</version>
+                <version>${org.springframework.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.aspectj</groupId>
